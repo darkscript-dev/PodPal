@@ -1,5 +1,7 @@
 # PodPal - Your Robotic Gardening Companion
 
+> A project by **[Darkscript](https://github.com/darkscript-dev)**
+
 PodPal is a smart plant pod that automates the process of growing plants by monitoring and controlling their environment. This Flutter application serves as the dashboard for interacting with your PodPal, allowing you to monitor your plant's vitals, receive AI-powered care recommendations, and manually control the pod's hardware.
 
 <table>
