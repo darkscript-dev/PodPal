@@ -70,13 +70,16 @@ The project is organized into the following directories:
 *   `lib/screens`: Contains the UI for each screen of the application.
 *   `lib/widgets`: Contains reusable UI components.
 
-## Arduino Code
+## Hardware Firmware & Architecture
 
-The Arduino code for the PodPal sensor hub can be found in the `/arduino` directory at the root of this repository. This code is responsible for reading sensor data, controlling the actuators, and communicating with the Flutter application.
+The PodPal hardware operates on a dual-microcontroller architecture to separate tasks efficiently.
 
-### Hardware
+### Arduino Due (Sensor Hub)
+This microcontroller is directly connected to all sensors and actuators. Its sole responsibility is to manage the plant's immediate environment based on the active thresholds. The code for the Due can be found in the `/arduino/DVE_R3_The_Sensor_Hub` directory.
 
+#### Hardware Components
 *   Arduino Due (or compatible)
+*   ESP8266 (for Wi-Fi)
 *   DHT11 Temperature and Humidity Sensor
 *   Soil Moisture Sensor
 *   Light Dependent Resistors (LDRs)
@@ -85,17 +88,15 @@ The Arduino code for the PodPal sensor hub can be found in the `/arduino` direct
 *   Fan
 *   Grow Light
 
-### Setup
-
+#### Setup
 1.  Open the `arduino/DVE_R3_The_Sensor_Hub/DVE_R3_The_Sensor_Hub.ino` file in the Arduino IDE.
-2.  Install the required libraries:
-    *   `DHT sensor library`
-    *   `Servo`
-    *   `LiquidCrystal_I2C`
-    *   `ArduinoJson`
-3.  Connect your Arduino to your computer.
-4.  Select the correct board and port from the `Tools` menu.
-5.  Upload the sketch to your Arduino.
+2.  Install the required libraries: `DHT sensor library`, `Servo`, `LiquidCrystal_I2C`, and `ArduinoJson`.
+3.  Connect your Arduino to your computer, select the correct board and port, and upload the sketch.
+
+### ESP8266 (Wi-Fi Bridge)
+This microcontroller acts as a communication bridge. It connects to your Wi-Fi network and establishes a communication channel with the Flutter app. It relays commands from the app to the Arduino Due and sends sensor data from the Due back to the app using JSON payloads over a serial connection.
+
+> **Status:** The source code for the ESP8266 firmware is currently being finalized and will be added to the repository as soon as it's available. The project is structured to easily incorporate it in the `/arduino/esp8266_wifi_bridge` directory once ready.
 
 ## Contributing
 
