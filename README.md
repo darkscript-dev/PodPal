@@ -112,13 +112,10 @@ If you have a suggestion that would make this better, please fork the repo and c
 ## Acknowledgments
 
 *   A huge thank you to **[MihirangaDissanayake](https://github.com/MihirangaDissanayake)** for developing and providing the complete Arduino code for the sensor hub.
+* [Flutter](https://flutter.dev/)
+*   [Google Gemini](https://ai.google.dev/)
+*   [Arduino](https://www.arduino.cc/)
 
 ## License
 
 Distributed under the MIT License. See `LICENSE` for more information.
-
-## Acknowledgments
-
-*   [Flutter](https://flutter.dev/)
-*   [Google Gemini](https://ai.google.dev/)
-*   [Arduino](https://www.arduino.cc/)
