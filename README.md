@@ -109,6 +109,10 @@ If you have a suggestion that would make this better, please fork the repo and c
 4.  Push to the Branch (`git push origin feature/AmazingFeature`)
 5.  Open a Pull Request
 
+## Acknowledgments
+
+*   A huge thank you to **[MihirangaDissanayake](https://github.com/MihirangaDissanayake)** for developing and providing the complete Arduino code for the sensor hub.
+
 ## License
 
 Distributed under the MIT License. See `LICENSE` for more information.
