@@ -18,7 +18,8 @@ modules.xml
 out/
 
 # Visual Studio Code
-.vscode/
+.vscode/*
+!.vscode/launch.json
 
 # Flutter/Dart
 .dart_tool/

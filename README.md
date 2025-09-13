@@ -1,43 +1,54 @@
-# PodPal - Your Robotic Gardening Companion
+# PodPal - Your AI-Powered Robotic Gardening Companion
 
 > A project by **[Darkscript](https://github.com/darkscript-dev)**
 
-PodPal is a smart plant pod that automates the process of growing plants by monitoring and controlling their environment. This Flutter application serves as the dashboard for interacting with your PodPal, allowing you to monitor your plant's vitals, receive AI-powered care recommendations, and manually control the pod's hardware.
+PodPal is a smart plant pod that automates plant care through a closed-loop, AI-driven feedback system. It monitors the environment, sends data to a custom-trained AI, and receives adaptive growth plans to ensure your plants thrive.
+
+### The PodPal Ecosystem
+The PodPal experience is delivered through two distinct applications, each designed for a specific purpose:
+
+*   **📊 The Dashboard App (This Repository):** This is your command center. Use it for initial setup, monitoring detailed historical data on charts, and generating AI-powered analytical reports.
+*   **😊 The Companion Display (PodFace):** This app provides an at-a-glance, emotional connection to your plant. It runs on a dedicated display (like a tablet) and shows a friendly, animated face that reflects the plant's current state. **[View the PodFace App Repository Here](https://github.com/darkscript-dev/flutter-robot-face)** 
 
 <table>
   <tr>
     <td><img src="./screenshots/loading_screen.png" alt="Home Screen" width="250"/></td>
-    <td><img src="./screenshots/home_screen.png" alt="Charts Screen" width="250"/></td>
+    <td><img src="./screenshots/home_screen.png" alt="AI Analytical Report" width="250"/></td>
   </tr>
   <tr>
-    <td><img src="./screenshots/charts_screen.png" alt="Profile Screen" width="250"/></td>
-    <td><img src="./screenshots/settings_screen.png" alt="Settings Screen" width="250"/></td>
+    <td><img src="./screenshots/charts_screen.png" alt="Charts Screen" width="250"/></td>
+    <td><img src="./screenshots/settings_screen.png" alt="Manual Control" width="250"/></td>
   </tr>
 </table>
 
+<p align="center">
+  <b><i>AI-Powered Analytical Report</i></b>
+  <br>
+  <img src="./screenshots/report_screen.png" alt="AI Analytical Report" width="400"/>
+</p>
+
 ## Features
 
-*   **Real-time Monitoring:** Keep track of your plant's temperature, humidity, soil moisture, and light levels.
-*   **AI Guardian Angel:** Leverages the Gemini API to provide intelligent, adaptive care plans for your specific plant.
-*   **Manual Control:** Adjust the settings for the water pump, fan, and grow light directly from the app.
-*   **Historical Data:** View charts of historical sensor data to track your plant's progress over time.
-*   **Onboarding and Setup:** A simple and intuitive process to connect the app to your PodPal device.
+*   **🤖 AI-Powered Analytical Reports:** Go beyond raw data. Generate detailed daily health reports that analyze environmental trends, provide an expert assessment of your plant's health, and offer proactive recommendations.
+*   **🧠 Adaptive Growth Plans:** The "AI Guardian" requests a new, optimized growth plan from Gemini every 30 minutes, using 12 hours of historical data to make intelligent, adaptive decisions about light, water, and climate.
+*   **😊 Emotional Companion Display (PodFace):** A secondary app that provides an ambient, at-a-glance emotional connection to your plant, showing if it's happy, thirsty, or sleeping.
+*   **📈 Historical Data Visualization:** Track temperature, humidity, soil moisture, and resource levels over time with clean, easy-to-read charts.
+*   **🛠️ Full Manual Control:** A "Developer Mode" allows for precise manual control over every hardware component, from light thresholds to nutrient dosing schedules.
 
 ## Getting Started
 
-These instructions will get you a copy of the project up and running on your local machine for development and testing purposes.
+These instructions will get you a copy of the project up and running on your local machine.
 
 ### Prerequisites
 
 *   Flutter SDK: [Installation Guide](https://flutter.dev/docs/get-started/install)
 *   Android Studio or Visual Studio Code
-*   An Android or iOS device or emulator
 
 ### Installation
 
 1.  **Clone the repository:**
     ```bash
-    git clone https://github.com/your-username/PodPal.git
+    git clone https://github.com/darkscript-dev/PodPal.git
     ```
 2.  **Navigate to the project directory:**
     ```bash
@@ -50,19 +61,14 @@ These instructions will get you a copy of the project up and running on your loc
 4.  **Set up your Gemini API Key:**
     *   Create a new file named `.env` in the root of the project.
     *   Add the following line to the `.env` file, replacing `YOUR_API_KEY` with your actual Gemini API key:
+        ```        GEMINI_API_KEY=YOUR_API_KEY
         ```
-        GEMINI_API_KEY=YOUR_API_KEY
-        ```
-    *   **Important:** This file is included in the `.gitignore` to prevent your API key from being committed to the repository.
 
 5.  **Run the app:**
-    ```bash
-    flutter run
-    ```
+    *   **VS Code:** A pre-configured launch profile named "PodPal (.env)" is included. Select it from the "Run and Debug" panel and press the play button.
+    *   **Android Studio:** A shared run configuration is included. It should be selected by default. Simply press the green "Run" button.
 
 ## Project Structure
-
-The project is organized into the following directories:
 
 *   `lib/api`: Contains services for interacting with external APIs (Gemini, Pod hardware) and the local database.
 *   `lib/models`: Defines the data models used throughout the application.
@@ -88,15 +94,23 @@ This microcontroller is directly connected to all sensors and actuators. Its sol
 *   Fan
 *   Grow Light
 
-#### Setup
-1.  Open the `arduino/DVE_R3_The_Sensor_Hub/DVE_R3_The_Sensor_Hub.ino` file in the Arduino IDE.
-2.  Install the required libraries: `DHT sensor library`, `Servo`, `LiquidCrystal_I2C`, and `ArduinoJson`.
-3.  Connect your Arduino to your computer, select the correct board and port, and upload the sketch.
-
 ### ESP8266 (Wi-Fi Bridge)
-This microcontroller acts as a communication bridge. It connects to your Wi-Fi network and establishes a communication channel with the Flutter app. It relays commands from the app to the Arduino Due and sends sensor data from the Due back to the app using JSON payloads over a serial connection.
+This microcontroller acts as a communication bridge between the Flutter app and the Arduino Due.
 
 > **Status:** The source code for the ESP8266 firmware is currently being finalized and will be added to the repository as soon as it's available. The project is structured to easily incorporate it in the `/arduino/esp8266_wifi_bridge` directory once ready.
+
+## Future Roadmap
+
+We are passionate about the future of PodPal.we plan to evolve our current prototype into a fully integrated, self-contained product.
+
+![PodPal Integrated Display Concept](./screenshots/product_vision.png)
+
+Our key development goals include:
+
+*   **➡️ Integrated Companion Display:** Embed a Raspberry Pi and LCD screen directly into the PodPal, creating the elegant, all-in-one device shown in the concept image above.
+*   **📷 Camera Integration with Gemini Vision:** Integrate a camera to allow the AI to visually monitor plant health, detect disease, and identify growth stages automatically.
+*   **☁️ Cloud Dashboard for Researchers:** Create a web platform for the lab/greenhouse market, allowing them to manage and analyze data from a fleet of PodPals in real-time.
+*   **🌱 Community-Sourced Growth Plans:** Allow users to share and download proven AI-generated growth plans for different types of plants.
 
 ## Contributing
 
@@ -113,9 +127,7 @@ If you have a suggestion that would make this better, please fork the repo and c
 ## Acknowledgments
 
 *   A huge thank you to **[MihirangaDissanayake](https://github.com/MihirangaDissanayake)** for developing and providing the complete Arduino code for the sensor hub.
-* [Flutter](https://flutter.dev/)
-*   [Google Gemini](https://ai.google.dev/)
-*   [Arduino](https://www.arduino.cc/)
+*   This project was built using [Flutter](https://flutter.dev/), [Google Gemini](https://ai.google.dev/), and [Arduino](https://www.arduino.cc/).
 
 ## License
 
