@@ -65,3 +65,6 @@ lib/generated_plugin_registrant.dart
 /windows/flutter/generated_plugin_registrant.cc
 /windows/flutter/generated_plugin_registrant.h
 /windows/flutter/generated_plugins.cmake
+
+# Keep the shared run configuration for Android Studio
+!/.idea/runConfigurations/main_dart.xml

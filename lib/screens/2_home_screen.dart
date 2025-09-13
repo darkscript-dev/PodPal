@@ -209,7 +209,7 @@ class _PodPalHomeScreenState extends State<PodPalHomeScreen> {
                       children: [
                         IconButton(
                           icon: const Icon(
-                            Icons.chat_bubble_outline,
+                            Icons.science,
                             color: Colors.white,
                             size: 28,
                           ),

@@ -56,6 +56,72 @@ class GeminiApiService {
     }
   }
 
+  Future<String> getAiReport(List<Map<String, dynamic>> historicalData,
+      String plantType, String plantStage, String plantName) async {
+    final model = GenerativeModel(model: 'gemini-2.0-flash', apiKey: _apiKey);
+    final historyString =
+    historicalData.map((record) => record.toString()).join('\n');
+
+    final prompt = """
+      You are an advanced AI agronomist and data analyst for the PodPal Smart Planter system. Your task is to generate a professional, in-depth daily health report.
+
+      ## CONTEXT ##
+      - Plant Type: $plantType
+      - Current Growth Stage: $plantStage
+      - Report Generation Date: ${DateTime.now().toIso8601String()}
+
+      ## INPUT DATA SCHEMA ##
+      - 'timestamp': The time of the reading.
+      - 'temperature': Ambient temperature in Celsius.
+      - 'humidity': Ambient humidity percentage.
+      - 'moisture': Soil moisture reading from the sensor (lower is drier, higher is wetter).
+      - 'water_level': The current level of the main water reservoir ('OK', 'LOW'). This is about the TANK, not the plant's hydration.
+      - 'nutrient_level': The current level of the nutrient solution reservoir ('OK', 'LOW'). This is about the TANK, not the plant's nutrition.
+
+      ## TASK ##
+      Analyze the last 12 hours of hardware sensor data provided below. Based on the plant's profile and the data schema, generate a detailed health report. Use a professional and analytical tone. Provide quantitative insights where possible (e.g., "temperature fluctuated by 5°C").
+
+      The report MUST include the following sections using Markdown headings:
+      
+      ### Executive Summary
+      A one-paragraph overview of the plant's overall condition and the performance of the automated system.
+      
+      ### Environmental Analysis
+      - **Temperature & Humidity:** Comment on the stability and whether the levels were within the optimal range for this plant.
+      - **Soil Moisture:** Analyze the moisture trend. Does it show clear cycles of watering and drying? Was the plant ever at risk of being too dry or too wet?
+      
+      ### Resource Levels
+      - **Water Reservoir:** State the current water tank level. If it is 'LOW', emphasize that it needs to be refilled soon.
+      - **Nutrient Reservoir:** State the current nutrient tank level. If it is 'LOW', emphasize that it needs to be refilled soon.
+
+      ### Overall Plant Health Assessment
+      Provide your expert conclusion on the plant's current health based on the data. Is it thriving, stable, or showing signs of stress?
+
+      ### Proactive Recommendations
+      Provide 1-2 actionable recommendations. This could be to refill a reservoir, a suggestion for the next AI growth plan, or a confirmation that the current plan is working perfectly.
+
+      ## INPUT DATA (Last 12 Hours) ##
+      $historyString
+
+      ## OUTPUT FORMATTING ##
+      Respond ONLY with the formatted report text using the specified Markdown headings. Do not include any other explanatory text.
+      """;
+
+    try {
+      final content = [Content.text(prompt)];
+      final response = await model.generateContent(content);
+
+      if (response.text != null) {
+        return response.text!;
+      } else {
+        throw Exception('Failed to generate report: Empty response from API.');
+      }
+    } catch (e) {
+      developer.log("Error calling Gemini API for Report: $e", name: "GeminiApiService");
+      throw Exception('Failed to parse Report from Gemini API. Error: $e');
+    }
+  }
+
   /// Generates an optimal threshold plan from the AI.
   Future<Map<String, dynamic>> generateAiPlan(
     List<Map<String, dynamic>> historicalData,

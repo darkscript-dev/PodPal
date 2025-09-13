@@ -33,7 +33,6 @@ class PodDataProvider with ChangeNotifier {
   String? _aiPlanError;
   Map<String, dynamic>? _lastAiPlan;
 
-
   // --- GETTERS (How the UI reads the state) ---
   PodStatusModel? get podStatus => _podStatus;
   bool get isLoading => _isLoading;
@@ -48,6 +47,15 @@ class PodDataProvider with ChangeNotifier {
   String? get aiPlanError => _aiPlanError;
   Map<String, dynamic>? get lastAiPlan => _lastAiPlan;
 
+
+  bool _isGeneratingReport = false;
+  String? _aiReport;
+  String? _reportError;
+
+  // NEW: AI Report Getters
+  bool get isGeneratingReport => _isGeneratingReport;
+  String? get aiReport => _aiReport;
+  String? get reportError => _reportError;
 
   // --- METHODS (How the UI triggers actions) ---
 
@@ -140,6 +148,39 @@ class PodDataProvider with ChangeNotifier {
   Future<void> sendManualPlan(Map<String, dynamic> manualPlan) async {
     // This is clean and keeps the API logic in one place.
     await _apiService.sendPlanToPod(baseUrl: _lastUsedUrl, plan: manualPlan);
+  }
+
+  Future<void> generateAiReport() async {
+    _isGeneratingReport = true;
+    _reportError = null;
+    _aiReport = null; // Clear old report
+    notifyListeners();
+
+    try {
+      if (_plantProfile == null) {
+        throw Exception("Cannot generate report without a plant profile.");
+      }
+
+      final historicalData = await _dbService.getRecentReadings();
+      if (historicalData.isEmpty) {
+        throw Exception("Not enough historical data to generate a report yet.");
+      }
+
+      // Call the Gemini service to get the report
+      final report = await _geminiService.getAiReport(
+        historicalData,
+        _plantProfile!.plantType,
+        _plantProfile!.plantStage,
+        _plantProfile!.name,
+      );
+
+      _aiReport = report;
+    } catch (e) {
+      _reportError = e.toString();
+    } finally {
+      _isGeneratingReport = false;
+      notifyListeners();
+    }
   }
 
   void resetState() {
