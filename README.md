@@ -95,9 +95,7 @@ This microcontroller is directly connected to all sensors and actuators. Its sol
 *   Grow Light
 
 ### ESP8266 (Wi-Fi Bridge)
-This microcontroller acts as a communication bridge between the Flutter app and the Arduino Due.
-
-> **Status:** The source code for the ESP8266 firmware is currently being finalized and will be added to the repository as soon as it's available. The project is structured to easily incorporate it in the `/arduino/esp8266_wifi_bridge` directory once ready.
+This microcontroller acts as a communication bridge between the Flutter app and the Arduino Due. The project is structured to easily incorporate it in the `/arduino/esp8266_wifi_bridge` directory once ready.
 
 ## Future Roadmap
 
