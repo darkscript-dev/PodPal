@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:podpal/providers/pod_data_provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'dart:convert';
+import 'dart:typed_data';
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({Key? key}) : super(key: key);
@@ -11,9 +13,12 @@ class SettingsScreen extends StatefulWidget {
 }
 
 class _SettingsScreenState extends State<SettingsScreen> {
+  // NEW: Controller for the webcam server URL input
+  final _laptopUrlController = TextEditingController();
+
   bool _developerModeEnabled = false;
 
-  // State variables for all manual thresholds
+  // State variables for all manual thresholds remain the same
   List<double> _lightThresholdOpen = [400, 400, 400];
   double _wateringThreshold = 500;
   double _wateringDurationMs = 3000;
@@ -29,8 +34,23 @@ class _SettingsScreenState extends State<SettingsScreen> {
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
+      // These functions will now run when the screen is first built
       _syncStateWithProvider();
+      _loadSavedUrls();
     });
+  }
+
+  // NEW: Function to load the saved laptop URL into the text field
+  void _loadSavedUrls() {
+    final provider = Provider.of<PodDataProvider>(context, listen: false);
+    _laptopUrlController.text = provider.lastUsedLaptopUrl;
+  }
+
+  @override
+  void dispose() {
+    // NEW: Dispose the new controller to prevent memory leaks
+    _laptopUrlController.dispose();
+    super.dispose();
   }
 
   void _syncStateWithProvider() {
@@ -39,7 +59,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
     if (lastPlan != null) {
       setState(() {
         _lightThresholdOpen = (lastPlan['light_threshold_open'] as List<dynamic>?)?.map((e) => (e as num).toDouble()).toList() ?? _lightThresholdOpen;
-        // REMOVED: Sync logic for the unused light_threshold_close.
         _fanOnHumidity = (lastPlan['fan_on_humidity'] as num?)?.toDouble() ?? _fanOnHumidity;
         _fanOnTemperature = (lastPlan['fan_on_temperature'] as num?)?.toDouble() ?? _fanOnTemperature;
         _wateringThreshold = (lastPlan['watering_threshold'] as num?)?.toDouble() ?? _wateringThreshold;
@@ -125,7 +144,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final provider = Provider.of<PodDataProvider>(context);
+    // We get the provider once here. We set listen: false for actions.
+    final provider = Provider.of<PodDataProvider>(context, listen: false);
 
     return Scaffold(
       backgroundColor: Colors.black,
@@ -137,6 +157,41 @@ class _SettingsScreenState extends State<SettingsScreen> {
       body: ListView(
         padding: const EdgeInsets.all(16.0),
         children: [
+          // --- NEW SECTION FOR WEBCAM SERVER ---
+          const Text(
+            'Webcam Server',
+            style: TextStyle(color: Colors.lightBlueAccent, fontSize: 20, fontWeight: FontWeight.bold),
+          ),
+          const SizedBox(height: 8),
+          TextField(
+            controller: _laptopUrlController,
+            style: const TextStyle(color: Colors.white),
+            decoration: const InputDecoration(
+              hintText: 'e.g., http://192.168.1.10:8080',
+              hintStyle: TextStyle(color: Colors.white38),
+              labelText: 'Laptop Server URL',
+              labelStyle: TextStyle(color: Colors.white70),
+              filled: true,
+              fillColor: Color(0xFF1C1C1E),
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.all(Radius.circular(12)),
+                borderSide: BorderSide.none,
+              ),
+            ),
+          ),
+          const SizedBox(height: 12),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(backgroundColor: Colors.lightBlueAccent),
+            child: const Text('Save URL', style: TextStyle(color: Colors.black)),
+            onPressed: () {
+              final url = _laptopUrlController.text.trim();
+              provider.saveLaptopUrl(url);
+              _showSnackBar('Webcam Server URL saved!');
+            },
+          ),
+          const Divider(color: Colors.white24, height: 32),
+
+          // --- EXISTING SECTIONS BELOW ---
           SwitchListTile(
             title: const Text('Developer Mode', style: TextStyle(color: Colors.white, fontSize: 18)),
             subtitle: const Text('Manually control Pod thresholds', style: TextStyle(color: Colors.white70)),
@@ -210,15 +265,58 @@ class _SettingsScreenState extends State<SettingsScreen> {
             padding: EdgeInsets.symmetric(vertical: 8.0),
             child: Text('Last Received AI Plan', style: TextStyle(color: Colors.cyan, fontSize: 20, fontWeight: FontWeight.bold)),
           ),
-          if (provider.lastAiPlan == null)
-            const Text('No AI plan has been received yet.', style: TextStyle(color: Colors.white70))
-          else
-            ...provider.lastAiPlan!.entries.map((entry) {
-              return ListTile(
-                title: Text(entry.key, style: const TextStyle(color: Colors.white)),
-                trailing: Text(entry.value.toString(), style: const TextStyle(color: Colors.cyan, fontSize: 16)),
+          // Use a Consumer here to rebuild ONLY this section when the lastAiPlan updates
+          Consumer<PodDataProvider>(
+            builder: (context, provider, child) {
+              if (provider.lastAiPlan == null) {
+                return const Text('No AI plan has been received yet.', style: TextStyle(color: Colors.white70));
+              }
+              return Column(
+                children: provider.lastAiPlan!.entries.map((entry) {
+                  return ListTile(
+                    title: Text(entry.key, style: const TextStyle(color: Colors.white)),
+                    trailing: Text(entry.value.toString(), style: const TextStyle(color: Colors.cyan, fontSize: 16)),
+                  );
+                }).toList(),
               );
-            }).toList(),
+            },
+          ),
+
+          // --- NEW SECTION: LAST UPLOADED IMAGE ---
+          const Divider(color: Colors.white24, height: 40),
+          const Padding(
+            padding: EdgeInsets.symmetric(vertical: 8.0),
+            child: Text('Last Uploaded Image', style: TextStyle(color: Colors.purpleAccent, fontSize: 20, fontWeight: FontWeight.bold)),
+          ),
+          const SizedBox(height: 8),
+          Consumer<PodDataProvider>(
+            builder: (context, provider, child) {
+              final lastImageBase64 = provider.lastFetchedImageBase64;
+
+              if (lastImageBase64 == null || lastImageBase64.isEmpty) {
+                return const Center(child: Text('No image uploaded in this session yet.', style: TextStyle(color: Colors.white70)));
+              }
+
+              try {
+                // Decode the base64 string into bytes
+                final Uint8List imageBytes = base64Decode(lastImageBase64);
+                return Center(
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(12.0),
+                    child: Image.memory(
+                      imageBytes,
+                      height: 200, // Or any desired size
+                      fit: BoxFit.cover,
+                    ),
+                  ),
+                );
+              } catch (e) {
+                // Handle potential decoding errors
+                return const Center(child: Text('Error displaying image.', style: TextStyle(color: Colors.redAccent)));
+              }
+            },
+          ),
+          const SizedBox(height: 24),
 
           // Danger Zone & Reset Button
           const Divider(color: Colors.white24, height: 40),

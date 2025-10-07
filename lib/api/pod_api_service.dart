@@ -96,6 +96,37 @@ class PodApiService {
     }
   }
 
+  Future<String> fetchPlantImage(String laptopUrl) async {
+    if (laptopUrl.isEmpty) {
+      throw Exception('Cannot get image: No Laptop Webcam Server URL has been set.');
+    }
+
+    final fullUrl = '$laptopUrl/get_image';
+    developer.log(
+      'Attempting to GET image from $fullUrl',
+      name: 'PodApiService',
+    );
+
+    try {
+      final response = await http.get(Uri.parse(fullUrl));
+
+      if (response.statusCode == 200) {
+        final Map<String, dynamic> data = jsonDecode(response.body);
+        if (data.containsKey('image_base64')) {
+          developer.log('Successfully fetched and decoded image.', name: 'PodApiService');
+          return data['image_base64'];
+        } else {
+          throw Exception('Image data not found in response.');
+        }
+      } else {
+        throw Exception('Failed to get image. Status code: ${response.statusCode}, Body: ${response.body}');
+      }
+    } catch (e) {
+      developer.log('Error fetching plant image: $e', name: 'PodApiService');
+      throw Exception('Failed to connect to the webcam server. Please check the URL and connection.');
+    }
+  }
+
   Future<PodStatusModel> _fetchMockPodStatus() async {
     print("--- 🤫 USING MOCK DATA VIA UI SWITCH 🤫 ---");
     await Future.delayed(const Duration(seconds: 1));

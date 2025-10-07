@@ -29,7 +29,6 @@ class GeminiApiService {
           name: "GeminiApiService",
         );
 
-
         final cleanedText =
             response.text!
                 .replaceAll("```json", "")
@@ -56,11 +55,16 @@ class GeminiApiService {
     }
   }
 
-  Future<String> getAiReport(List<Map<String, dynamic>> historicalData,
-      String plantType, String plantStage, String plantName) async {
+  Future<String> getAiReport(
+    List<Map<String, dynamic>> historicalData,
+    String plantType,
+    String plantStage,
+    String plantName,
+  ) async {
     final model = GenerativeModel(model: 'gemini-2.0-flash', apiKey: _apiKey);
-    final historyString =
-    historicalData.map((record) => record.toString()).join('\n');
+    final historyString = historicalData
+        .map((record) => record.toString())
+        .join('\n');
 
     final prompt = """
       You are an advanced AI agronomist and data analyst for the PodPal Smart Planter system. Your task is to generate a professional, in-depth daily health report.
@@ -117,7 +121,10 @@ class GeminiApiService {
         throw Exception('Failed to generate report: Empty response from API.');
       }
     } catch (e) {
-      developer.log("Error calling Gemini API for Report: $e", name: "GeminiApiService");
+      developer.log(
+        "Error calling Gemini API for Report: $e",
+        name: "GeminiApiService",
+      );
       throw Exception('Failed to parse Report from Gemini API. Error: $e');
     }
   }
@@ -127,6 +134,7 @@ class GeminiApiService {
     List<Map<String, dynamic>> historicalData,
     String plantType,
     String plantStage,
+    String plantImageBase64,
   ) async {
     final model = GenerativeModel(model: 'gemini-2.0-flash', apiKey: _apiKey);
 
@@ -135,42 +143,49 @@ class GeminiApiService {
         .map((record) => record.toString())
         .join('\n');
 
+    final imageBytes = base64Decode(plantImageBase64);
+
+
     final prompt = """
-      You are an expert autonomous agronomist AI. Your task is to set a complete optimal growth plan (thresholds) 
-      for a smart plant pod, tailored specifically for the plant it's growing.
+    You are an expert autonomous agronomist AI. Your task is to set a complete optimal growth plan (thresholds) for a smart plant pod.
 
-      ## Plant Profile ##
-      - Plant Type: $plantType
-      - Current Stage: $plantStage
+    ## Visual Analysis ##
+    First, analyze the provided image of the plant. Assess its overall health, size, coloration, and look for any signs of nutrient deficiency, overwatering, underwatering, or pest issues. The visual context is critical.
 
-      Your recommendations must be based on the plant's profile. A '$plantType' at the '$plantStage' stage has very 
-      specific needs for light, water, humidity, AND nutrients. For example, a seedling needs gentle care, 
-      while a mature, fruiting plant needs more light and regular nutrients.
+    ## Plant Profile ##
+    Plant Type: $plantType
+    Current Stage: $plantStage
 
-      ## System Capabilities (Thresholds to set) ##
-      # The light level (from 0-1023) above which the servo covers should open.
-      light_threshold_open: (list of 3 integers) One for each LDR/servo pair [Left, Right, Back].
-      fan_on_humidity: (integer)
-      fan_on_temperature: (integer)
-      watering_threshold: (integer)
-      watering_duration_ms: (integer)
-      low_humidity_watering_threshold: (integer)
-      light_on_hour: (integer, 0-23)
-      light_off_hour: (integer, 0-23)
-      nutrient_on_hour: (integer, 0-23) The hour of the day to dose nutrients.
-      nutrient_duration_ms: (integer) The duration in milliseconds to run the nutrient pump.
+    ## System Capabilities (Thresholds to set) ##
+    light_threshold_open: (list of 3 integers)
+    fan_on_humidity: (integer)
+    fan_on_temperature: (integer)
+    watering_threshold: (integer)
+    watering_duration_ms: (integer)
+    low_humidity_watering_threshold: (integer)
+    light_on_hour: (integer, 0-23)
+    light_off_hour: (integer, 0-23)
+    nutrient_on_hour: (integer, 0-23)
+    nutrient_duration_ms: (integer)
 
-      ## Recent Historical Data ##
-      $historyString
+    ## Recent Historical Sensor Data ##
+    $historyString
 
-      ## Task ##
-      Based on the provided historical data AND the plant profile, generate the optimal set of thresholds. 
-      You must now also manage the new nutrient dosing system. 
-      Provide your response as a single, minified JSON object with ONLY the keys listed in the 'System Capabilities' section above.
-      """;
+    ## Task ##
+    Based on your VISUAL ANALYSIS of the image, the plant profile, and the historical sensor data, generate the optimal set of thresholds. For example, if you see yellowing leaves in the image, you might adjust the nutrient schedule. If the plant looks droopy, you might adjust the watering threshold.
+    Respond as a single, minified JSON object with ONLY the keys listed in the 'System Capabilities' section.
+    """;
 
     try {
-      final content = [Content.text(prompt)];
+      // CHANGE 2: Construct a multimodal request with both the text and the image.
+      // WHY: The API needs to receive both parts in a single 'multi' content block.
+      final content = [
+        Content.multi([
+          TextPart(prompt),
+          DataPart('image/jpeg', imageBytes), // Assumes the image is a JPEG
+        ])
+      ];
+
       final response = await model.generateContent(content);
 
       if (response.text != null) {
@@ -180,10 +195,10 @@ class GeminiApiService {
         );
 
         final cleanedText =
-            response.text!
-                .replaceAll("```json", "")
-                .replaceAll("```", "")
-                .trim();
+        response.text!
+            .replaceAll("```json", "")
+            .replaceAll("```", "")
+            .trim();
 
         developer.log(
           "AI Plan Cleaned JSON: $cleanedText",

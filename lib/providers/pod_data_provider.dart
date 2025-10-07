@@ -22,6 +22,8 @@ class PodDataProvider with ChangeNotifier {
   bool _isLoading = false;
   String? _errorMessage;
   String _lastUsedUrl = '';
+  String _lastUsedLaptopUrl = '';
+  String? _lastFetchedImageBase64;
 
   // Plant Profile State
   PlantProfileModel? _plantProfile;
@@ -38,6 +40,8 @@ class PodDataProvider with ChangeNotifier {
   bool get isLoading => _isLoading;
   String? get errorMessage => _errorMessage;
   bool get hasError => _errorMessage != null;
+  String get lastUsedLaptopUrl => _lastUsedLaptopUrl;
+  String? get lastFetchedImageBase64 => _lastFetchedImageBase64;
 
   PlantProfileModel? get plantProfile => _plantProfile;
   bool get isGeneratingProfile => _isGeneratingProfile;
@@ -63,6 +67,7 @@ class PodDataProvider with ChangeNotifier {
   Future<void> initProvider() async {
     final prefs = await SharedPreferences.getInstance();
     _lastUsedUrl = prefs.getString('ngrok_url') ?? '';
+    _lastUsedLaptopUrl = prefs.getString('laptop_url') ?? '';
 
     final isSetupComplete = prefs.getBool('setupComplete') ?? false;
     if (isSetupComplete) {
@@ -120,12 +125,18 @@ class PodDataProvider with ChangeNotifier {
         throw Exception("Not enough historical data to generate a plan yet.");
       }
 
-      // 2. Generate the new threshold plan from the AI, providing plant context.
+      // 2. Fetch the plant image from the webcam server.
+      print("Guardian Angel (2/4): Fetching image from webcam server...");
+      final imageBase64 = await _apiService.fetchPlantImage(_lastUsedLaptopUrl);
+      _lastFetchedImageBase64 = imageBase64;
+
+      // 3. Generate the new threshold plan from the AI, providing plant context.
       print("Guardian Angel: Asking AI for a new plan for a ${_plantProfile!.plantStage} ${_plantProfile!.plantType}...");
       final newPlan = await _geminiService.generateAiPlan(
         historicalData,
         _plantProfile!.plantType,
         _plantProfile!.plantStage,
+        imageBase64,
       );
 
       _lastAiPlan = newPlan;
@@ -148,6 +159,14 @@ class PodDataProvider with ChangeNotifier {
   Future<void> sendManualPlan(Map<String, dynamic> manualPlan) async {
     // This is clean and keeps the API logic in one place.
     await _apiService.sendPlanToPod(baseUrl: _lastUsedUrl, plan: manualPlan);
+  }
+
+  Future<void> saveLaptopUrl(String url) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString('laptop_url', url);
+    _lastUsedLaptopUrl = url;
+    print("Laptop URL saved: $url");
+    notifyListeners();
   }
 
   Future<void> generateAiReport() async {
@@ -193,6 +212,7 @@ class PodDataProvider with ChangeNotifier {
     _isGeneratingProfile = false;
     _profileError = null;
 
+    _lastFetchedImageBase64 = null;
     _isUpdatingAiPlan = false;
     _aiPlanError = null;
     _lastAiPlan = null;
